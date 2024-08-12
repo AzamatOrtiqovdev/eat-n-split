@@ -30,19 +30,25 @@ function Button({ children, onclick }) {
 }
 
 export default function App() {
-  const [showAddFriend, setShowAddFriend] = useState(false);
+  const [showAddFriend, setShowAddFriend] = useState(true);
+  const [friends, setFriends] = useState(initialFriends);
 
   function hundleShowAddFriend() {
-    setShowAddFriend(!showAddFriend);
+    setShowAddFriend(show => !show);
+  }
+
+  function hundleAddFriend(friend) {
+    setFriends(friends => [...friends, friend])
+    setShowAddFriend(false);
   }
 
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendsList />
-        {showAddFriend && <FormAddFriend />}
+        <FriendsList friends={friends}/>
+        {showAddFriend && <FormAddFriend onAddFriend={hundleAddFriend}/>}
         <Button onclick={hundleShowAddFriend}>
-          {showAddFriend ? "close" : "Add Friend"}
+          {showAddFriend ? "Close" : "Add Friend"}
         </Button>
       </div>
 
@@ -51,12 +57,10 @@ export default function App() {
   );
 }
 
-function FriendsList() {
-  const friendsList = initialFriends;
-
+function FriendsList({friends}) {
   return (
     <ul>
-      {friendsList.map((friend) => (
+      {friends.map((friend) => (
         <Friend friend={friend} key={friend.id} />
       ))}
     </ul>
@@ -85,14 +89,38 @@ function Friend({ friend }) {
   );
 }
 
-function FormAddFriend() {
+function FormAddFriend({onAddFriend}) {
+
+  const [name, setName] = useState("");
+  const [image, setImage] = useState("https://i.pravatar.cc/48");
+
+
+  if(!name || !image) return;
+
+  const id = crypto.randomUUID();
+  function hundleSubmit(e) {
+    e.preventDefault();
+
+    const newFriend = {
+      name, 
+      id, 
+      image: `${image}?=${id}`,
+      balance: 0
+    }
+
+    onAddFriend(newFriend);
+
+    setName("");
+    setImage("https://i.pravatar.cc/48");
+  }
+
   return (
-    <form className="form-add-friend">
+    <form className="form-add-friend" onSubmit={hundleSubmit}>
       <label>👫 Friend Name</label>
-      <input type="text" />
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
 
       <label>🌉 Image Url</label>
-      <input type="text" />
+      <input type="text" value={image} onChange={(e) => setImage(e.target.value)}/>
 
       <Button>Add</Button>
     </form>
