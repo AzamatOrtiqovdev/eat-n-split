@@ -30,44 +30,76 @@ function Button({ children, onclick }) {
 }
 
 export default function App() {
-  const [showAddFriend, setShowAddFriend] = useState(true);
+  const [showAddFriend, setShowAddFriend] = useState(false);
   const [friends, setFriends] = useState(initialFriends);
+  const [selectedFriend, setSelectedFriend] = useState(null);
 
   function hundleShowAddFriend() {
-    setShowAddFriend(show => !show);
+    setShowAddFriend((show) => !show);
   }
 
   function hundleAddFriend(friend) {
-    setFriends(friends => [...friends, friend])
+    setFriends((friends) => [...friends, friend]);
     setShowAddFriend(false);
+  }
+
+  function hundleSelection(friend) {
+    // setSelectedFriend(friend);
+    setSelectedFriend((cur) => (cur?.id === friend?.id ? null : friend));
+    setShowAddFriend(false);
+  }
+
+  function hundleSplitBill(value) {
+    setFriends((friends) =>
+      friends.map((friend) =>
+        selectedFriend.id === friend.id
+          ? { ...friend, balance: friend.balance + value }
+          : friend
+      )
+    );
+
+    setSelectedFriend(null)
   }
 
   return (
     <div className="app">
       <div className="sidebar">
-        <FriendsList friends={friends}/>
-        {showAddFriend && <FormAddFriend onAddFriend={hundleAddFriend}/>}
+        <FriendsList
+          friends={friends}
+          onSelection={hundleSelection}
+          selectedFriend={selectedFriend}
+        />
+
+        {showAddFriend && <FormAddFriend onAddFriend={hundleAddFriend} />}
+
         <Button onclick={hundleShowAddFriend}>
           {showAddFriend ? "Close" : "Add Friend"}
         </Button>
       </div>
 
-      <FormSplitBill />
+      {selectedFriend && <FormSplitBill selectedFriend={selectedFriend} onSplit = {hundleSplitBill}/>}
     </div>
   );
 }
 
-function FriendsList({friends}) {
+function FriendsList({ friends, onSelection, selectedFriend }) {
   return (
     <ul>
       {friends.map((friend) => (
-        <Friend friend={friend} key={friend.id} />
+        <Friend
+          friend={friend}
+          key={friend.id}
+          onSelection={onSelection}
+          selectedFriend={selectedFriend}
+        />
       ))}
     </ul>
   );
 }
 
-function Friend({ friend }) {
+function Friend({ friend, onSelection, selectedFriend }) {
+  const isSelected = friend?.id === selectedFriend?.id;
+
   return (
     <li>
       <img src={friend.image} alt={friend.name} />
@@ -84,29 +116,29 @@ function Friend({ friend }) {
         </p>
       )}
 
-      <Button>Select</Button>
+      <Button onclick={() => onSelection(friend)}>
+        {isSelected ? "Close" : "Select"}
+      </Button>
     </li>
   );
 }
 
-function FormAddFriend({onAddFriend}) {
-
+function FormAddFriend({ onAddFriend }) {
   const [name, setName] = useState("");
   const [image, setImage] = useState("https://i.pravatar.cc/48");
 
-
-  if(!name || !image) return;
+  // if(!name || !image) return;
 
   const id = crypto.randomUUID();
   function hundleSubmit(e) {
     e.preventDefault();
 
     const newFriend = {
-      name, 
-      id, 
+      name,
+      id,
       image: `${image}?=${id}`,
-      balance: 0
-    }
+      balance: 0,
+    };
 
     onAddFriend(newFriend);
 
@@ -117,34 +149,69 @@ function FormAddFriend({onAddFriend}) {
   return (
     <form className="form-add-friend" onSubmit={hundleSubmit}>
       <label>👫 Friend Name</label>
-      <input type="text" value={name} onChange={(e) => setName(e.target.value)}/>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
 
       <label>🌉 Image Url</label>
-      <input type="text" value={image} onChange={(e) => setImage(e.target.value)}/>
+      <input
+        type="text"
+        value={image}
+        onChange={(e) => setImage(e.target.value)}
+      />
 
       <Button>Add</Button>
     </form>
   );
 }
 
-function FormSplitBill() {
+function FormSplitBill({ selectedFriend, onSplit }) {
+  const [bill, setBill] = useState("");
+  const [paidUser, setPaidUser] = useState("");
+  const paidByFriend = bill ? bill - paidUser : "";
+  const [whoIsPaying, setWhoIsPaying] = useState("user");
+
+  function hundleSubmit(e){
+    e.preventDefault();
+
+  const paidByFriend = bill ? bill - paidUser : "";
+    onSplit(whoIsPaying === "user" ? paidByFriend : -paidByFriend)
+  }
+
   return (
-    <form className="form-split-bill">
-      <h2>Split a bill with X</h2>
+    <form className="form-split-bill" onSubmit={hundleSubmit}>
+      <h2>Split a bill with {selectedFriend.name}</h2>
 
       <label>💰 Bill value</label>
-      <input type="text" />
+      <input
+        type="text"
+        value={bill}
+        onChange={(e) => setBill(Number(e.target.value))}
+      />
 
       <label>🧍 Your Expense</label>
-      <input type="text" />
+      <input
+        type="text"
+        value={paidUser}
+        onChange={(e) =>
+          setPaidUser(
+            Number(e.target.value) > bill ? paidUser : Number(e.target.value)
+          )
+        }
+      />
 
-      <label>👫 X's Expense</label>
-      <input type="text" disabled />
+      <label>👫 {selectedFriend.name}'s Expense</label>
+      <input type="text" disabled value={paidByFriend} />
 
       <label>🤑 Who is paying the bill ?</label>
-      <select>
+      <select
+        value={whoIsPaying}
+        onChange={(e) => setWhoIsPaying(e.target.value)}
+      >
         <option value="user">You</option>
-        <option value="friend">X</option>
+        <option value="friend">{selectedFriend.name}</option>
       </select>
 
       <Button>Split bill</Button>
