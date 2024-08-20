@@ -58,7 +58,7 @@ export default function App() {
       )
     );
 
-    setSelectedFriend(null)
+    setSelectedFriend(null);
   }
 
   return (
@@ -77,7 +77,13 @@ export default function App() {
         </Button>
       </div>
 
-      {selectedFriend && <FormSplitBill selectedFriend={selectedFriend} onSplit = {hundleSplitBill}/>}
+      {selectedFriend && (
+        <FormSplitBill
+          selectedFriend={selectedFriend}
+          onSplit={hundleSplitBill}
+          key={selectedFriend.id}
+        />
+      )}
     </div>
   );
 }
@@ -173,11 +179,11 @@ function FormSplitBill({ selectedFriend, onSplit }) {
   const paidByFriend = bill ? bill - paidUser : "";
   const [whoIsPaying, setWhoIsPaying] = useState("user");
 
-  function hundleSubmit(e){
+  function hundleSubmit(e) {
     e.preventDefault();
 
-  const paidByFriend = bill ? bill - paidUser : "";
-    onSplit(whoIsPaying === "user" ? paidByFriend : -paidByFriend)
+    const paidByFriend = bill ? bill - paidUser : "";
+    onSplit(whoIsPaying === "user" ? paidByFriend : -paidByFriend);
   }
 
   return (
